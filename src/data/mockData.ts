@@ -3,7 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleAccount, CmsConnection, PlatformModule, SeoIssue } from '../types';
+import { GoogleAccount, CmsConnection, PlatformModule, SeoIssue, UserProfile } from '../types';
+
+export const PLATFORM_CREATOR = {
+  name: 'Dheeraj Rawat Mohan',
+  title: 'Platform Founder & Chief Technical Architect',
+  badge: 'Crafted by Dheeraj Mohan',
+  bio: 'Conceived and architected RankAgent OS as an autonomous, multi-tenant SEO intelligence & direct CMS patching platform. Built to empower marketers and developers worldwide with real Google Search Console & GA4 automation.',
+  email: 'dheerajrawatmohan@gmail.com',
+  github: 'https://github.com/dheerajmohan',
+  location: 'India',
+};
 
 export const INITIAL_MODULES: PlatformModule[] = [
   {
@@ -40,11 +50,47 @@ export const INITIAL_MODULES: PlatformModule[] = [
   },
 ];
 
+export const DEMO_USERS: UserProfile[] = [
+  {
+    id: 'usr-1',
+    name: 'Alex Rivera',
+    email: 'alex.rivera@growthventures.io',
+    role: 'member',
+    isGoogleConnected: true,
+    connectedAt: '2026-10-26T10:00:00Z',
+  },
+  {
+    id: 'usr-2',
+    name: 'Priya Sharma',
+    email: 'priya.sharma@globaltech.com',
+    role: 'member',
+    isGoogleConnected: true,
+    connectedAt: '2026-10-26T11:30:00Z',
+  },
+  {
+    id: 'usr-3',
+    name: 'David Chen',
+    email: 'david.chen@ecommercehub.org',
+    role: 'member',
+    isGoogleConnected: true,
+    connectedAt: '2026-10-26T12:15:00Z',
+  },
+];
+
+export const DEFAULT_USER: UserProfile = {
+  id: 'usr-guest',
+  name: 'New Marketing User',
+  email: 'user@gmail.com',
+  role: 'member',
+  isGoogleConnected: true,
+  connectedAt: new Date().toISOString(),
+};
+
 export const INITIAL_GOOGLE_ACCOUNT: GoogleAccount = {
-  email: 'dheerajrawatmohan@gmail.com',
-  name: 'Dheeraj Rawat Mohan',
+  email: 'user@gmail.com',
+  name: 'New Marketing User',
   isConnected: true,
-  connectedAt: '2026-10-26T14:30:00Z',
+  connectedAt: new Date().toISOString(),
   gscProperties: [
     {
       id: 'gsc-1',
@@ -135,7 +181,7 @@ export const INITIAL_GOOGLE_ACCOUNT: GoogleAccount = {
   ga4Properties: [
     {
       propertyId: 'ga4-4829104',
-      displayName: 'ErgoStore Global E-Commerce (Web)',
+      displayName: 'Global E-Commerce Store (Web)',
       websiteUrl: 'https://myshop.com',
       totalUsers: 48900,
       totalSessions: 67200,
@@ -172,7 +218,7 @@ export const INITIAL_GOOGLE_ACCOUNT: GoogleAccount = {
         },
         {
           pagePath: '/',
-          pageTitle: 'ErgoStore - Healthy Workspaces Start Here',
+          pageTitle: 'Healthy Workspaces Start Here',
           sessions: 14500,
           users: 11200,
           bounceRate: 32.1,
@@ -188,7 +234,7 @@ export const INITIAL_CMS_CONNECTIONS: CmsConnection[] = [
   {
     id: 'cms-1',
     platform: 'wordpress',
-    siteName: 'ErgoStore Official Store (WordPress / WooCommerce)',
+    siteName: 'Official Store (WordPress / WooCommerce)',
     siteUrl: 'https://myshop.com',
     isConnected: true,
     status: 'active',
@@ -196,7 +242,7 @@ export const INITIAL_CMS_CONNECTIONS: CmsConnection[] = [
     verifiedAt: '2026-10-26T18:00:00Z',
     config: {
       endpoint: 'https://myshop.com/wp-json/wp/v2',
-      username: 'admin_dheeraj',
+      username: 'admin_webmaster',
       themeVersion: 'Astra Pro v4.6.1 + RankAgent Bridge',
       autoDeployApproved: true,
     },
@@ -204,75 +250,97 @@ export const INITIAL_CMS_CONNECTIONS: CmsConnection[] = [
   {
     id: 'cms-2',
     platform: 'shopify',
-    siteName: 'TechVision Gear Shop (Shopify)',
-    siteUrl: 'https://techvision-gear.myshopify.com',
-    isConnected: true,
-    status: 'active',
-    lastPingMs: 98,
-    verifiedAt: '2026-10-25T11:20:00Z',
+    siteName: 'Global Storefront (Shopify Plus)',
+    siteUrl: 'https://myshop-direct.myshopify.com',
+    isConnected: false,
+    status: 'disconnected',
     config: {
-      endpoint: 'https://techvision-gear.myshopify.com/admin/api/2026-01',
-      accessToken: 'shpat_9a8b7c6d5e4f3g2h1',
-      autoDeployApproved: false,
+      endpoint: 'https://myshop-direct.myshopify.com/admin/api/2026-01',
+      accessToken: 'shpat_demo_token_key',
     },
   },
 ];
 
 export const INITIAL_AUDIT_ISSUES: SeoIssue[] = [
   {
-    id: 'issue-demo-1',
+    id: 'iss-1',
+    title: 'Missing Canonical Link Element (Duplicate URL Risk)',
     severity: 'critical',
-    category: 'technical',
-    title: 'Missing Self-Referencing Canonical Tag on Product Pages',
-    description: 'URLs with UTM parameters or faceted filters (e.g. ?color=black) lack canonical signals, causing Google Search Console indexation dilution.',
-    affectedUrl: 'https://myshop.com/products/standing-desk',
-    currentValue: 'None',
-    recommendedValue: '<link rel="canonical" href="https://myshop.com/products/standing-desk" />',
-    impactScore: 9,
-    effortScore: 'easy',
-    canAutoFix: true,
-    fixActionType: 'canonical',
+    category: 'Technical SEO',
+    url: 'https://myshop.com',
+    description: 'No <link rel="canonical"> tag detected in document <head>. Search engines may index duplicate parameter variants (?ref=, ?utm=) causing link equity dilution.',
+    recommendation: 'Inject self-referencing canonical tag pointing explicitly to "https://myshop.com".',
+    autoFixable: true,
+    proposedFix: {
+      tag: 'canonical',
+      value: 'https://myshop.com',
+    },
   },
   {
-    id: 'issue-demo-2',
+    id: 'iss-2',
+    title: 'Meta Description Sub-optimal Length (53 chars vs 120-160 optimal)',
     severity: 'high',
-    category: 'content',
-    title: 'Low CTR on High Impression Search Query',
-    description: 'Query "standing desk converter adjustable" generates 72,000 impressions in GSC but only 2.9% CTR due to generic title tag.',
-    affectedUrl: 'https://myshop.com/products/standing-desk',
-    currentValue: 'Standing Desk - Buy Online',
-    recommendedValue: 'Adjustable Standing Desk Converter | Dual Monitor Ergonomic Lift - Free Shipping',
-    impactScore: 8,
-    effortScore: 'easy',
-    canAutoFix: true,
-    fixActionType: 'meta_title',
+    category: 'On-Page SEO',
+    url: 'https://myshop.com',
+    description: 'Current description is "Explore ergonomic office chairs with lumbar support." which is too short (53 chars). It leaves SERP snippet space empty and reduces click-through potential.',
+    recommendation: 'Expand description to 148 characters with primary keywords, product guarantees, and a clear call-to-action.',
+    autoFixable: true,
+    proposedFix: {
+      tag: 'meta_description',
+      value: 'Shop premium ergonomic office chairs & standing desks engineered for all-day spine relief. Free express shipping, 30-day trials & 5-year warranty.',
+    },
   },
   {
-    id: 'issue-demo-3',
+    id: 'iss-3',
+    title: 'Missing OpenGraph Image (og:image) for Social SERP Sharing',
     severity: 'medium',
-    category: 'schema',
-    title: 'Missing Product & Review Schema Markup',
-    description: 'Product pages lack Schema.org AggregateRating and Offer markup, missing star ratings in Google Search results.',
-    affectedUrl: 'https://myshop.com/products/standing-desk',
-    currentValue: 'No structured data',
-    recommendedValue: '<script type="application/ld+json">{"@context":"https://schema.org","@type":"Product","name":"Standing Desk Converter","aggregateRating":{"@type":"AggregateRating","ratingValue":"4.8","reviewCount":"342"}}</script>',
-    impactScore: 7,
-    effortScore: 'easy',
-    canAutoFix: true,
-    fixActionType: 'schema_markup',
+    category: 'Social SEO',
+    url: 'https://myshop.com',
+    description: 'No <meta property="og:image"> tag was found. When shared on social networks, Slack, or Google Discover, no preview banner will be rendered.',
+    recommendation: 'Add high-resolution (1200x630px) WebP banner with clear brand logo and hero image.',
+    autoFixable: true,
+    proposedFix: {
+      tag: 'og_image',
+      value: 'https://myshop.com/cdn/assets/ergostore-hero-preview.webp',
+    },
   },
   {
-    id: 'issue-demo-4',
+    id: 'iss-4',
+    title: '3 Image Elements Missing Alt Attributes',
     severity: 'medium',
-    category: 'content',
-    title: '3 Product Showcase Images Missing Alt Text',
-    description: 'Hero carousel images do not include descriptive alt attributes, impairing accessibility and Google Image search ranking.',
-    affectedUrl: 'https://myshop.com/products/standing-desk',
-    currentValue: '3 images with alt=""',
-    recommendedValue: 'Add semantic alt descriptions: "Height-adjustable ergonomic desk in dual-monitor home office setup"',
-    impactScore: 6,
-    effortScore: 'easy',
-    canAutoFix: true,
-    fixActionType: 'alt_text',
+    category: 'Accessibility & Image SEO',
+    url: 'https://myshop.com',
+    description: '3 out of 14 images on the landing page lack descriptive alt attributes. Google Image search cannot index these product photos.',
+    recommendation: 'Add keyword-rich descriptive alt attributes to product showcase images.',
+    autoFixable: true,
+    proposedFix: {
+      tag: 'image_alt',
+      value: 'Ergonomic lumbar support desk chair in midnight slate finish',
+    },
+  },
+  {
+    id: 'iss-5',
+    title: 'Missing Structured Data (Schema.org / JSON-LD)',
+    severity: 'high',
+    category: 'Structured Data',
+    url: 'https://myshop.com',
+    description: 'No Organization, WebSite, or Store JSON-LD schema found. Misses out on Google Knowledge Graph entities and rich search badges.',
+    recommendation: 'Deploy complete Organization & WebSite JSON-LD entity graph with search action.',
+    autoFixable: true,
+    proposedFix: {
+      tag: 'schema_jsonld',
+      value: JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'OnlineStore',
+        'name': 'ErgoStore',
+        'url': 'https://myshop.com',
+        'description': 'Leading provider of ergonomic office furniture',
+        'potentialAction': {
+          '@type': 'SearchAction',
+          'target': 'https://myshop.com/search?q={search_term_string}',
+          'query-input': 'required name=search_term_string'
+        }
+      }, null, 2),
+    },
   },
 ];

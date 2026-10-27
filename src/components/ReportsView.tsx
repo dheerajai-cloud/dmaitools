@@ -28,7 +28,7 @@ import {
   Code2
 } from 'lucide-react';
 import { ReportData, generateCsvContent, generateWordContent, generatePptSlidesHtml } from '../utils/reportExport';
-import { GscProperty, Ga4Property, SeoIssue } from '../types';
+import { GscProperty, Ga4Property, SeoIssue, ThemeMode } from '../types';
 
 interface ReportsViewProps {
   activeDomain: string;
@@ -36,6 +36,7 @@ interface ReportsViewProps {
   gscData: GscProperty;
   ga4Data: Ga4Property;
   issues: SeoIssue[];
+  theme?: ThemeMode;
 }
 
 export const ReportsView: React.FC<ReportsViewProps> = ({
@@ -44,7 +45,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   gscData,
   ga4Data,
   issues,
+  theme = 'light',
 }) => {
+  const isDark = theme === 'dark';
+
   // Human consultant state
   const [consultantName, setConsultantName] = useState('Dheeraj Rawat Mohan');
   const [consultantTitle, setConsultantTitle] = useState('Senior Technical SEO Architect & Director');
@@ -142,22 +146,24 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       {/* Top Banner & Export Bar */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-800 border border-slate-700/80 rounded-2xl p-6 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className={`p-6 rounded-2xl border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-5 transition-all ${
+        isDark ? 'bg-slate-850/90 border-slate-750' : 'bg-white border-slate-200'
+      }`}>
         <div>
           <div className="flex items-center space-x-2">
-            <span className="p-2 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <span className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
               <FileText className="w-5 h-5" />
             </span>
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">
-                Human-Grade Technical SEO Dossier & Client Deliverables
+              <h2 className={`text-lg font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Human-Grade Technical SEO Dossier &amp; Client Deliverables
               </h2>
-              <div className="text-xs text-slate-400">
-                Crafted by <strong className="text-white font-semibold">{consultantName}</strong> &bull; Production Certified
+              <div className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Architected by <strong className={isDark ? 'text-white' : 'text-slate-900'}>{consultantName}</strong> &bull; Production Certified
               </div>
             </div>
           </div>
-          <p className="text-xs text-slate-400 mt-2 max-w-2xl leading-relaxed">
+          <p className={`text-xs mt-2 max-w-2xl leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
             Authentic, human consultant audit report built from real HTTP crawler telemetry, Google Search Console logs, and GA4 user sessions. Ready for client delivery across multiple formats.
           </p>
         </div>
@@ -167,88 +173,96 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           {/* PDF */}
           <button
             onClick={handlePrintPdf}
-            className="bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-500/30 hover:border-red-500/50 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm"
+            className="bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
             title="Export or Print as Formal PDF Document"
           >
-            <Printer className="w-4 h-4 text-red-400" />
+            <Printer className="w-4 h-4 text-rose-500" />
             <span>Export PDF</span>
           </button>
 
           {/* Excel */}
           <button
             onClick={handleExportCsv}
-            className="bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm"
+            className="bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
             title="Download Professional Multi-Table Spreadsheet"
           >
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
             <span>Export Excel (.csv)</span>
           </button>
 
           {/* Word */}
           <button
             onClick={handleExportWord}
-            className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 hover:border-blue-500/50 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm"
+            className="bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-900 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
             title="Download Microsoft Word Executive SOW Dossier"
           >
-            <FileText className="w-4 h-4 text-blue-400" />
+            <FileText className="w-4 h-4 text-indigo-500" />
             <span>Export Word (.doc)</span>
           </button>
 
           {/* PowerPoint */}
           <button
             onClick={handleExportPpt}
-            className="bg-amber-600/20 hover:bg-amber-600/40 text-amber-300 border border-amber-500/30 hover:border-amber-500/50 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-sm"
+            className="bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-900 px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer shadow-xs"
             title="Download Slide Deck for Client Presentations"
           >
-            <Presentation className="w-4 h-4 text-amber-400" />
+            <Presentation className="w-4 h-4 text-amber-500" />
             <span>Export Slides (PPT)</span>
           </button>
         </div>
       </div>
 
       {/* Human Consultant Metadata & Customizer Bar */}
-      <div className="bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 shadow-sm text-xs">
+      <div className={`p-4 rounded-2xl border shadow-sm text-xs transition-all ${
+        isDark ? 'bg-slate-850/90 border-slate-750' : 'bg-white border-slate-200'
+      }`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1">
             {/* Consultant Name */}
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center space-x-1">
-                <User className="w-3 h-3 text-blue-400" />
-                <span>Auditor & Consultant Name</span>
+                <User className="w-3 h-3 text-indigo-500" />
+                <span>Auditor &amp; Consultant Name</span>
               </label>
               <input
                 type="text"
                 value={consultantName}
                 onChange={(e) => setConsultantName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-blue-500"
+                className={`w-full px-3 py-1.5 rounded-xl border text-xs outline-none ${
+                  isDark ? 'bg-slate-900 border-slate-750 text-white' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-600'
+                }`}
               />
             </div>
 
             {/* Consultant Title */}
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center space-x-1">
-                <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                <span>Consultant Title / Role</span>
+                <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                <span>Professional Designation</span>
               </label>
               <input
                 type="text"
                 value={consultantTitle}
                 onChange={(e) => setConsultantTitle(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-blue-500"
+                className={`w-full px-3 py-1.5 rounded-xl border text-xs outline-none ${
+                  isDark ? 'bg-slate-900 border-slate-750 text-white' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-600'
+                }`}
               />
             </div>
 
             {/* Client Name */}
             <div>
               <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1 flex items-center space-x-1">
-                <Building className="w-3 h-3 text-purple-400" />
+                <Building className="w-3 h-3 text-cyan-500" />
                 <span>Client Organization</span>
               </label>
               <input
                 type="text"
                 value={clientName}
                 onChange={(e) => setClientName(e.target.value)}
-                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-blue-500"
+                className={`w-full px-3 py-1.5 rounded-xl border text-xs outline-none ${
+                  isDark ? 'bg-slate-900 border-slate-750 text-white' : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-indigo-600'
+                }`}
               />
             </div>
           </div>
@@ -256,9 +270,13 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div className="flex items-center space-x-2 shrink-0">
             <button
               onClick={() => setIsEditingNotes(!isEditingNotes)}
-              className="bg-slate-700/80 hover:bg-slate-750 text-slate-200 border border-slate-600 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition-colors cursor-pointer"
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center space-x-1.5 transition-colors cursor-pointer ${
+                isDark 
+                  ? 'bg-slate-800 hover:bg-slate-750 border-slate-700 text-slate-200' 
+                  : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
+              }`}
             >
-              <Edit3 className="w-3.5 h-3.5 text-blue-400" />
+              <Edit3 className="w-3.5 h-3.5 text-indigo-500" />
               <span>{isEditingNotes ? 'Close Editor' : 'Edit Executive Notes'}</span>
             </button>
           </div>

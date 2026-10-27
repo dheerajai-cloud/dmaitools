@@ -9,6 +9,16 @@ import { ReportData } from './utils/reportExport';
 
 export type { SeoIssue, MetaTagCheckResult, WebsiteChangeItem, ImplementationReport, ReportData };
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  role: 'member' | 'admin' | 'guest';
+  isGoogleConnected: boolean;
+  connectedAt?: string;
+}
+
 export interface GscQuery {
   query: string;
   clicks: number;
@@ -102,3 +112,5 @@ export interface PlatformModule {
   description: string;
   isActive: boolean;
 }
+
+export type ThemeMode = 'light' | 'dark';

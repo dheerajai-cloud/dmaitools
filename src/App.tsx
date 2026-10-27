@@ -12,12 +12,16 @@ import { DataHubView } from './components/DataHubView';
 import { CmsIntegrationsView } from './components/CmsIntegrationsView';
 import { ImplementationHub } from './components/ImplementationHub';
 import { ReportsView } from './components/ReportsView';
+import { AuthModal } from './components/AuthModal';
+import { ConnectPropertyModal } from './components/ConnectPropertyModal';
 
 import { 
   INITIAL_MODULES, 
   INITIAL_GOOGLE_ACCOUNT, 
   INITIAL_CMS_CONNECTIONS, 
-  INITIAL_AUDIT_ISSUES 
+  INITIAL_AUDIT_ISSUES,
+  DEFAULT_USER,
+  PLATFORM_CREATOR
 } from './data/mockData';
 import { 
   PlatformModule, 
@@ -28,14 +32,50 @@ import {
   WebsiteChangeItem,
   GscQuery,
   Ga4LandingPage,
-  MetaTagCheckResult
+  MetaTagCheckResult,
+  UserProfile,
+  ThemeMode
 } from './types';
 
 export default function App() {
+  // Theme state (Modern Light by default, or Pro Dark)
+  const [theme, setTheme] = useState<ThemeMode>(() => {
+    const saved = localStorage.getItem('rankagent_theme');
+    return (saved as ThemeMode) || 'light';
+  });
+
+  // Current logged in user (dynamic multi-user support for any visitor)
+  const [currentUser, setCurrentUser] = useState<UserProfile>(() => {
+    const saved = localStorage.getItem('rankagent_user');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return DEFAULT_USER;
+      }
+    }
+    return DEFAULT_USER;
+  });
+
+  // Modals state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+
   const [currentModule, setCurrentModule] = useState<PlatformModule>(INITIAL_MODULES[0]);
-  const [googleAccount, setGoogleAccount] = useState<GoogleAccount>(INITIAL_GOOGLE_ACCOUNT);
+  const [googleAccount, setGoogleAccount] = useState<GoogleAccount>(() => {
+    return {
+      ...INITIAL_GOOGLE_ACCOUNT,
+      email: currentUser.email,
+      name: currentUser.name,
+    };
+  });
+
   const [cmsConnections, setCmsConnections] = useState<CmsConnection[]>(INITIAL_CMS_CONNECTIONS);
   const [activeDomain, setActiveDomain] = useState<string>('https://myshop.com');
+  const [availableDomains, setAvailableDomains] = useState<string[]>([
+    'https://myshop.com',
+    'https://blog.techvision.io',
+  ]);
   const [activeTab, setActiveTab] = useState<TabType>('prompt');
 
   // Audit state
@@ -76,6 +116,61 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isTestingCmsId, setIsTestingCmsId] = useState<string | undefined>();
 
+  // Toggle Theme
+  const handleToggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('rankagent_theme', nextTheme);
+  };
+
+  // Login handler
+  const handleLoginUser = (user: UserProfile) => {
+    setCurrentUser(user);
+    localStorage.setItem('rankagent_user', JSON.stringify(user));
+    setGoogleAccount((prev) => ({
+      ...prev,
+      name: user.name,
+      email: user.email,
+      isConnected: true,
+    }));
+  };
+
+  // Logout handler
+  const handleLogoutUser = () => {
+    const guestUser: UserProfile = {
+      id: 'usr-guest',
+      name: 'Guest User',
+      email: 'guest@workspace.org',
+      role: 'guest',
+      isGoogleConnected: false,
+    };
+    setCurrentUser(guestUser);
+    localStorage.setItem('rankagent_user', JSON.stringify(guestUser));
+    setGoogleAccount((prev) => ({
+      ...prev,
+      name: 'Guest User',
+      email: 'guest@workspace.org',
+      isConnected: false,
+    }));
+  };
+
+  // Add custom domain / property handler
+  const handleAddProperty = (newGsc: any, newGa4: any) => {
+    const domain = newGsc.siteUrl;
+    if (!availableDomains.includes(domain)) {
+      setAvailableDomains((prev) => [domain, ...prev]);
+    }
+    setActiveDomain(domain);
+    setGoogleAccount((prev) => ({
+      ...prev,
+      gscProperties: [newGsc, ...prev.gscProperties],
+      ga4Properties: [newGa4, ...prev.ga4Properties],
+    }));
+
+    // Trigger immediate live crawl audit for this newly added website
+    handleAuditUrl(domain);
+  };
+
   // Fetch initial changes from backend API
   useEffect(() => {
     fetch('/api/changes')
@@ -92,10 +187,6 @@ export default function App() {
 
   const activeGscData = googleAccount.gscProperties.find((p) => p.siteUrl === activeDomain) || googleAccount.gscProperties[0];
   const activeGa4Data = googleAccount.ga4Properties.find((p) => p.websiteUrl === activeDomain) || googleAccount.ga4Properties[0];
-  const availableDomains = [
-    'https://myshop.com',
-    'https://blog.techvision.io',
-  ];
 
   // Refresh data action
   const handleRefreshData = async () => {
@@ -126,6 +217,9 @@ export default function App() {
         setIssues(data.issues || []);
         if (data.signals) setAuditSignals(data.signals);
         setActiveDomain(url);
+        if (!availableDomains.includes(url)) {
+          setAvailableDomains((prev) => [url, ...prev]);
+        }
       }
     } catch (err) {
       console.error('Audit failed:', err);
@@ -145,41 +239,35 @@ export default function App() {
       const data = await res.json();
       if (data.success && data.item) {
         setChanges((prev) => [data.item, ...prev.filter((c) => c.id !== data.item.id)]);
-      } else {
-        // Local fallback
-        const localItem: WebsiteChangeItem = {
-          ...item,
-          status: 'pending',
-          createdAt: new Date().toISOString(),
-        };
-        setChanges((prev) => [localItem, ...prev]);
+        setStagedChangeIds((prev) => new Set([...prev, item.id]));
       }
-      setStagedChangeIds((prev) => new Set([...prev, item.id]));
     } catch {
-      const localItem: WebsiteChangeItem = {
+      const fallbackItem: WebsiteChangeItem = {
         ...item,
         status: 'pending',
         createdAt: new Date().toISOString(),
       };
-      setChanges((prev) => [localItem, ...prev]);
+      setChanges((prev) => [fallbackItem, ...prev.filter((c) => c.id !== item.id)]);
       setStagedChangeIds((prev) => new Set([...prev, item.id]));
     }
   };
 
-  // Approve and apply change to website
+  // Apply change to live website
   const handleApplyChange = async (changeId: string) => {
     setIsProcessingId(changeId);
     try {
       const res = await fetch('/api/changes/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: changeId, appliedBy: `User (${googleAccount.name})` }),
+        body: JSON.stringify({
+          id: changeId,
+          user: currentUser.name,
+        }),
       });
       const data = await res.json();
       if (data.success && data.item) {
         setChanges((prev) => prev.map((c) => (c.id === changeId ? data.item : c)));
       } else {
-        // Local state fallback
         setChanges((prev) =>
           prev.map((c) => {
             if (c.id === changeId) {
@@ -203,7 +291,7 @@ export default function App() {
                     'Google Analytics 4: Organic landing page bounce rate',
                   ],
                   expectedImpact: '+15% to +30% CTR improvement and resolved indexing alerts.',
-                  appliedBy: `User (${googleAccount.name})`,
+                  appliedBy: `${currentUser.name} (${currentUser.email})`,
                   previousValue: c.previousValue,
                   appliedValue: c.proposedValue,
                   status: 'applied',
@@ -215,7 +303,6 @@ export default function App() {
         );
       }
     } catch {
-      // Local apply fallback
       setChanges((prev) =>
         prev.map((c) =>
           c.id === changeId
@@ -251,13 +338,8 @@ export default function App() {
               return {
                 ...c,
                 status: 'rolled_back',
-                report: c.report
-                  ? {
-                      ...c.report,
-                      status: 'rolled_back',
-                      rollbackTimestamp: new Date().toISOString(),
-                    }
-                  : undefined,
+                rolledBackAt: new Date().toISOString(),
+                report: c.report ? { ...c.report, status: 'rolled_back' } : undefined,
               };
             }
             return c;
@@ -266,23 +348,26 @@ export default function App() {
       }
     } catch {
       setChanges((prev) =>
-        prev.map((c) => (c.id === changeId ? { ...c, status: 'rolled_back' } : c))
+        prev.map((c) =>
+          c.id === changeId
+            ? {
+                ...c,
+                status: 'rolled_back',
+                rolledBackAt: new Date().toISOString(),
+              }
+            : c
+        )
       );
     } finally {
       setIsProcessingId(undefined);
     }
   };
 
-  // Test CMS connection
+  // Test CMS Connection
   const handleTestConnection = async (cmsId: string) => {
     setIsTestingCmsId(cmsId);
     try {
-      const conn = cmsConnections.find((c) => c.id === cmsId);
-      const res = await fetch('/api/cms/test-connection', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform: conn?.platform, url: conn?.siteUrl }),
-      });
+      const res = await fetch(`/api/cms/test/${cmsId}`, { method: 'POST' });
       const data = await res.json();
       if (data.success) {
         setCmsConnections((prev) =>
@@ -291,7 +376,7 @@ export default function App() {
               ? {
                   ...c,
                   status: 'active',
-                  lastPingMs: 110,
+                  lastPingMs: data.pingMs || 110,
                   verifiedAt: new Date().toISOString(),
                 }
               : c
@@ -321,6 +406,10 @@ export default function App() {
     try {
       const contextData = {
         domain: activeDomain,
+        user: {
+          name: currentUser.name,
+          email: currentUser.email,
+        },
         gsc: {
           totalClicks: activeGscData.totalClicks,
           totalImpressions: activeGscData.totalImpressions,
@@ -408,7 +497,7 @@ export default function App() {
   // Route from GA4 landing page to AI Prompt
   const handleAskAiAboutPage = (page: Ga4LandingPage) => {
     setActiveTab('prompt');
-    const promptText = `Landing page "${page.pagePath}" (${page.pageTitle}) has ${page.sessions.toLocaleString()} sessions and a high bounce rate of ${page.bounceRate}%. Analyze technical and semantic SEO factors and recommend concrete fixes to improve engagement and conversions.`;
+    const promptText = `Landing page "${page.pagePath}" (${page.pageTitle}) has ${page.sessions.toLocaleString()} sessions and a bounce rate of ${page.bounceRate}%. Analyze technical and semantic SEO factors and recommend concrete fixes to improve engagement and conversions.`;
     handleSendMessage(promptText, ['ga4', 'crawler'], 'gemini-3.8-flash');
   };
 
@@ -419,20 +508,30 @@ export default function App() {
 
   const pendingApprovalsCount = changes.filter((c) => c.status === 'pending').length;
   const criticalIssuesCount = issues.filter((i) => i.severity === 'critical').length;
+  const isDark = theme === 'dark';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors ${
+      isDark 
+        ? 'bg-slate-950 text-slate-100 selection:bg-indigo-600 selection:text-white' 
+        : 'bg-slate-50/70 text-slate-900 selection:bg-indigo-600 selection:text-white'
+    }`}>
       {/* Header */}
       <Header
         currentModule={currentModule}
         availableModules={INITIAL_MODULES}
         onSelectModule={setCurrentModule}
+        currentUser={currentUser}
         googleAccount={googleAccount}
         activeDomain={activeDomain}
         availableDomains={availableDomains}
         onSelectDomain={setActiveDomain}
+        onOpenConnectModal={() => setIsConnectModalOpen(true)}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onRefreshData={handleRefreshData}
         isRefreshing={isRefreshing}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Navigation Tabs */}
@@ -441,6 +540,7 @@ export default function App() {
         onTabChange={setActiveTab}
         pendingApprovalsCount={pendingApprovalsCount}
         criticalIssuesCount={criticalIssuesCount}
+        theme={theme}
       />
 
       {/* Main View Area */}
@@ -455,6 +555,7 @@ export default function App() {
             ga4Data={activeGa4Data}
             onStageChange={handleStageChange}
             onExportReportFromPrompt={handleExportReportFromPrompt}
+            theme={theme}
           />
         )}
 
@@ -468,6 +569,7 @@ export default function App() {
             isAuditing={isAuditing}
             onStageChange={handleStageChange}
             stagedChangeIds={stagedChangeIds}
+            theme={theme}
           />
         )}
 
@@ -477,6 +579,8 @@ export default function App() {
             ga4Data={activeGa4Data}
             onAskAiAboutQuery={handleAskAiAboutQuery}
             onAskAiAboutPage={handleAskAiAboutPage}
+            onOpenConnectModal={() => setIsConnectModalOpen(true)}
+            theme={theme}
           />
         )}
 
@@ -497,6 +601,7 @@ export default function App() {
               };
               setCmsConnections((prev) => [...prev, conn]);
             }}
+            theme={theme}
           />
         )}
 
@@ -506,6 +611,7 @@ export default function App() {
             onApplyChange={handleApplyChange}
             onRollbackChange={handleRollbackChange}
             isProcessingId={isProcessingId}
+            theme={theme}
           />
         )}
 
@@ -516,23 +622,55 @@ export default function App() {
             gscData={activeGscData}
             ga4Data={activeGa4Data}
             issues={issues}
+            theme={theme}
           />
         )}
       </main>
 
       {/* Global Platform Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800/80 py-4 px-4 sm:px-6 lg:px-8 text-xs text-slate-400">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-          <div className="flex items-center space-x-2">
-            <span className="font-semibold text-slate-200">RankAgent AI OS</span>
+      <footer className={`border-t py-4 px-4 sm:px-6 lg:px-8 text-xs transition-colors ${
+        isDark ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-white border-slate-200 text-slate-500'
+      }`}>
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>RankAgent AI OS</span>
             <span>&bull;</span>
-            <span>Created & Built by <strong className="text-blue-400 font-semibold">Dheeraj Rawat Mohan</strong></span>
+            <span>Architected &amp; Built by <strong className="text-indigo-600 dark:text-indigo-400 font-bold">{PLATFORM_CREATOR.name}</strong></span>
+            <span className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-semibold">
+              Platform Founder
+            </span>
           </div>
-          <div className="flex items-center space-x-3 text-[11px] text-slate-400">
-            <span>Google Search Console &bull; GA4 &bull; WordPress &bull; Shopify &bull; Gemini 3.8</span>
+
+          <div className="flex items-center space-x-3 text-[11px]">
+            <span>Active Session: <strong className={isDark ? 'text-slate-200' : 'text-slate-800'}>{currentUser.email}</strong></span>
+            <span>&bull;</span>
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+            >
+              Switch Account
+            </button>
           </div>
         </div>
       </footer>
+
+      {/* User Login & Google Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        currentUser={currentUser}
+        onLogin={handleLoginUser}
+        onLogout={handleLogoutUser}
+        theme={theme}
+      />
+
+      {/* Connect Property & GSC / GA4 Modal */}
+      <ConnectPropertyModal
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
+        onAddProperty={handleAddProperty}
+        theme={theme}
+      />
     </div>
   );
 }
