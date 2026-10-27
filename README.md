@@ -7,9 +7,25 @@ RankAgent is an autonomous full-stack SEO operating system that connects to Goog
 
 ## 🚀 How to Deploy Live via GitHub (Step-by-Step)
 
-Because this platform includes a live HTTP crawler backend and server-side Gemini 3.8 AI engine, it runs as a full-stack Node.js Express server. Here are the easiest and most reliable ways to take it live directly from your GitHub repository for free:
+### Method 1: Deploy on Vercel (Fastest & 1-Click)
+1. **Push your code to GitHub**:
+   ```bash
+   git remote add origin https://github.com/YOUR_USERNAME/rankagent-os.git
+   git push -u origin main
+   ```
+2. Open [Vercel.com](https://vercel.com) and click **"Add New..."** &rarr; **"Project"**.
+3. Import your GitHub repository (`rankagent-os`).
+4. **Settings** (automatically configured via our included `vercel.json`):
+   - **Framework Preset:** `Vite`
+   - **Root Directory:** `./`
+   - **Environment Variables:**
+     - Add `GEMINI_API_KEY`: *(Your Google AI Studio Gemini API key)*
+5. Click **"Deploy"**!
+Vercel will build the frontend and serverless API endpoints instantly and give you a free `*.vercel.app` live domain.
 
-### Method 1: Deploy on Render.com (Recommended & Free)
+---
+
+### Method 2: Deploy on Render.com (Free)
 1. **Push your code to GitHub**:
    ```bash
    git init
