@@ -383,7 +383,7 @@ app.post('/api/cms/test-connection', (req: Request, res: Response) => {
 // Dev & Production Vite Middleware
 // -------------------------------------------------------------
 async function startServer() {
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
