@@ -1,0 +1,6 @@
+{
+  "name": "RankAgent - AI SEO Automation & Implementation OS",
+  "description": "Intelligent SEO agent platform connecting Google Search Console, GA4, and CMS platforms for automated audits, natural language reporting, and 1-click fix implementations with instant rollback.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
